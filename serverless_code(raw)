@@ -1,0 +1,129 @@
+# !pip install --no-cache-dir easyocr opencv-python pillow --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host=files.pythonhosted.org
+# !pip install easyocr opencv-python pillow Groq flask opencv-python easyocr pillow groq werkzeug
+import os
+import cv2
+import json
+import re
+import easyocr
+import numpy as np
+from PIL import Image
+from groq import Groq
+from datetime import datetime
+
+# Initialize Groq client
+groq_api_key = os.getenv('GROQ_API_KEY')
+groq_client = Groq(api_key="{HASSAN_KEY}")
+
+def process_image(image_path):
+    # Load and enhance image
+    image = cv2.imread(image_path)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    # Save enhanced image
+    enhanced_image_path = "enhanced_pic.jpg"
+    cv2.imwrite(enhanced_image_path, thresh)
+    
+    # Extract text using EasyOCR
+    reader = easyocr.Reader(['en'])
+    extracted_text = reader.readtext(thresh, detail=0)
+    
+    print("Extracted Text:")
+    print("\n".join(extracted_text))
+    return extracted_text
+
+def extract_dates(text_list):
+    # Pattern for dates in format DD.MM.YYYY or similar
+    date_pattern = r'\d{2}[.,]\d{2}[.,]\d{4}'
+    dates = []
+    
+    for text in text_list:
+        matches = re.findall(date_pattern, text)
+        dates.extend(matches)
+    
+    # Assuming dates appear in order: Birth, Issue, Expiry
+    date_dict = {
+        "Date of Birth": dates[0] if len(dates) > 0 else None,
+        "Date of Issue": dates[1] if len(dates) > 1 else None,
+        "Date of Expiry": dates[2] if len(dates) > 2 else None
+    }
+    
+    return date_dict
+
+def get_groq_completion(extracted_text, dates):
+    prompt = (
+        f"Given the following extracted text from a Pakistani ID card and the correct dates mapping: {dates}, "
+        f"extract and return a JSON object containing only the following details: "
+        f"Name, Father Name, Gender, Country of Stay, Identity Number, Date of Birth, Date of Issue, and Date of Expiry. "
+        f"Use the dates provided in the dates mapping. "
+        f"If any fields are not present in the data, set their value to null. "
+        f"Data: {extracted_text}"
+    )
+    
+    completion = groq_client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[{
+            "role": "user",
+            "content": prompt
+        }],
+        temperature=0.7,  # Reduced temperature for more consistent output
+        max_completion_tokens=1024,
+        top_p=1,
+        stream=False
+    )
+    return completion
+
+def parse_json_response(response_content):
+    try:
+        return json.loads(response_content)
+    except json.JSONDecodeError:
+        json_match = re.search(r'\{.*\}', response_content, re.DOTALL)
+        if json_match:
+            try:
+                json_str = json_match.group(0)
+                # Clean up common JSON formatting issues
+                json_str = json_str.replace("'", '"')
+                json_str = re.sub(r'(?<![\{\s,])"(?=[^"]*":)', '"', json_str)
+                return json.loads(json_str)
+            except json.JSONDecodeError as e:
+                print("Error decoding extracted JSON:", e)
+                return None
+        print("No valid JSON found.")
+        return None
+
+def validate_and_format_dates(response_json, extracted_dates):
+    """Validate and correct dates in the response JSON"""
+    if response_json and isinstance(response_json, dict):
+        response_json['Date of Birth'] = extracted_dates['Date of Birth']
+        response_json['Date of Issue'] = extracted_dates['Date of Issue']
+        response_json['Date of Expiry'] = extracted_dates['Date of Expiry']
+    return response_json
+
+def main():
+    # Process image and extract text
+    image_path = "fakefront.jpg"
+    extracted_text = process_image(image_path)
+    
+    # Extract dates first
+    extracted_dates = extract_dates(extracted_text)
+    print("Extracted dates:", extracted_dates)
+    
+    # Get completion from Groq with dates information
+    completion = get_groq_completion(extracted_text, extracted_dates)
+    response_content = completion.choices[0].message.content.strip()
+    print("Response Content:", response_content)
+    
+    # Parse JSON response
+    response_json = parse_json_response(response_content)
+    
+    # Validate and correct dates
+    response_json = validate_and_format_dates(response_json, extracted_dates)
+    
+    if response_json:
+        print("Final JSON output:")
+        print(json.dumps(response_json, indent=4))
+    else:
+        print("Failed to parse valid JSON from response.")
+
+if __name__ == "__main__":
+    main()
