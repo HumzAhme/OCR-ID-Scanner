@@ -1,3 +1,5 @@
+# !pip install easyocr opencv-python pillow Groq flask opencv-python easyocr pillow groq werkzeug
+# !pip install --no-cache-dir easyocr opencv-python pillow --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host=files.pythonhosted.org
 from flask import Flask, request, jsonify
 import os
 import cv2
