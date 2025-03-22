@@ -1,5 +1,7 @@
 # ID OCR Scanner & Face Extraction API
 
+![image](https://github.com/user-attachments/assets/57628e0d-3712-4302-abda-e0709049d9a5)
+
 This project is an AI-powered OCR application designed to extract information from Pakistani ID cards using computer vision and OCR techniques. The application performs two main tasks:
 
 1. **OCR Extraction:**  
