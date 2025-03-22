@@ -12,6 +12,23 @@ This project is an AI-powered OCR application designed to extract information fr
 > This project was developed as a contract assignment by a Junior AI Engineer from January to March [Year].  
 > **IMPORTANT:** Update all placeholder paths and API keys as described below.
 
+3. **Testing:**
+   ```bash
+   curl.exe -X POST -F "file=@{JPG_PATH}" http://127.0.0.1:5000/process-id
+
+4. **UI+shell**
+   works for both on command line and HTML webpage
+
+5. **Directories & Models**
+   The image directories paths must be carefully understood and setup
+
+6. **FILES**
+   - app.py is the main server file (complete on its own without dependence on other files)
+   - id image folders contains the IDs
+   - back_id.py is the backside ID work that is separate and unintegrated
+   - faceID.py is the separate code of the face detection already integrated in app.py
+   - serverless_code(raw) is the model and code that doesnt has server integrated
+   
 ## Features
 
 - **Image Upload & Processing:**  
@@ -37,4 +54,4 @@ This project is an AI-powered OCR application designed to extract information fr
 Install the required Python packages with this one-liner:
 
 ```bash
-pip install --no-cache-dir easyocr opencv-python pillow groq flask werkzeug --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org
+pip install --no-cache-dir easyocr opencv-python pillow groq ultralytics flask werkzeug --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org
