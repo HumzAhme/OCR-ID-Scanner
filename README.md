@@ -28,6 +28,10 @@ This project is an AI-powered OCR application designed to extract information fr
    - back_id.py is the backside ID work that is separate and unintegrated
    - faceID.py is the separate code of the face detection already integrated in app.py
    - serverless_code(raw) is the model and code that doesnt has server integrated
+
+7. **Download YOLO model in the same directory**
+   ```bash
+   curl -L -o yolov8l-face-lindevs.pt https://github.com/lindevs/yolov8-face/releases/download/1.0.1/yolov8l-face-lindevs.pt
    
 ## Features
 
